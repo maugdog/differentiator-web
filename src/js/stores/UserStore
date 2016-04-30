@@ -1,0 +1,81 @@
+/*
+ * UserStore
+ */
+
+var Dispatcher = require('../Dispatcher');
+var EventEmitter = require('events').EventEmitter;
+var assign = require('object-assign');
+var merge = require('merge');
+
+var CHANGE_EVENT = 'change';
+
+var _user = {};
+
+/**
+ * Update the user with the provided object.
+ * @param {object} An object with the user updates.
+ */
+function update(updates) {
+  merge(_user, updates);
+}
+
+var UserStore = assign({}, EventEmitter.prototype, {
+
+  /**
+   * Tests whether all the remaining TODO items are marked as completed.
+   * @return {boolean}
+   */
+  areAllComplete: function() {
+    for (var id in _todos) {
+      if (!_todos[id].complete) {
+        return false;
+      }
+    }
+    return true;
+  },
+
+  /**
+   * Get the entire collection of TODOs.
+   * @return {object}
+   */
+  getUser: function() {
+    return _user;
+  },
+
+  emitChange: function() {
+    this.emit(CHANGE_EVENT);
+  },
+
+  /**
+   * @param {function} callback
+   */
+  addChangeListener: function(callback) {
+    this.on(CHANGE_EVENT, callback);
+  },
+
+  /**
+   * @param {function} callback
+   */
+  removeChangeListener: function(callback) {
+    this.removeListener(CHANGE_EVENT, callback);
+  }
+});
+
+// Register callback to handle all updates
+Dispatcher.register(function(action) {
+  switch(action.actionType) {
+    case TodoConstants.LOGIN:
+      UserStore.emitChange();
+      break;
+
+    case TodoConstants.TODO_DESTROY_COMPLETED:
+      destroyCompleted();
+      TodoStore.emitChange();
+      break;
+
+    default:
+      // no op
+  }
+});
+
+module.exports = UserStore;
